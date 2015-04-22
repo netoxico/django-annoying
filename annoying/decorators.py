@@ -205,6 +205,7 @@ def ajax_request(func):
             format_type = 'application/json'
         response = func(request, *args, **kwargs)
         if not isinstance(response, HttpResponse):
+            callback = request.GET.get('callback')
             if hasattr(settings, 'FORMAT_TYPES'):
                 format_type_handler = settings.FORMAT_TYPES[format_type]
                 if hasattr(format_type_handler, '__call__'):
@@ -214,6 +215,8 @@ def ajax_request(func):
                     module = __import__(mod_name, fromlist=[func_name])
                     function = getattr(module, func_name)
                     data = function(response)
+            if callback:
+                data = '%s(%s)' % (callback, FORMAT_TYPES[format_type](response))
             else:
                 data = FORMAT_TYPES[format_type](response)
             response = HttpResponse(data, content_type=format_type)
